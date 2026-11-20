@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard ULPL - JTM Politeknik Mukah</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--primary:#1e3a8a;--primary-dark:#172554;--primary-light:#dbeafe;--accent:#3b82f6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-400:#9ca3af;--gray-500:#6b7280;--gray-700:#374151;--gray-900:#111827;--white:#ffffff;--sidebar-w:240px}
+body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:var(--gray-50);color:var(--gray-900);display:flex;min-height:100vh}
+#sidebar{width:var(--sidebar-w);background:var(--primary-dark);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
+.sb-logo{padding:16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+.sb-logo-img{width:40px;height:40px;border-radius:8px;object-fit:contain;background:#fff;padding:3px;flex-shrink:0}
+.sb-logo-text p:first-child{color:#fff;font-weight:600;font-size:13px}
+.sb-logo-text p:last-child{color:#93c5fd;font-size:11px}
+#nav{flex:1;overflow-y:auto;padding:12px 10px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;color:#bfdbfe;font-size:13px;font-weight:500;transition:background .15s,color .15s;margin-bottom:2px;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:var(--accent);color:#fff}
+.nav-item svg{flex-shrink:0;opacity:.8}
+.nav-item.active svg{opacity:1}
+.sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;color:#64748b}
+#main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0}
+#topbar{height:56px;background:var(--white);border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;position:sticky;top:0;z-index:50}
+.topbar-title{font-weight:600;font-size:15px;color:var(--gray-900)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-logo{height:30px;object-fit:contain}
+.topbar-user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gray-700)}
+.avatar{width:30px;height:30px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:11px}
+.btn-logout{background:none;border:1px solid var(--gray-200);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;color:var(--gray-500);transition:all .15s}
+.btn-logout:hover{border-color:var(--danger);color:var(--danger)}
+#content{flex:1;padding:20px;overflow-y:auto}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:18px;font-weight:700;color:var(--gray-900)}
+.page-header p{font-size:13px;color:var(--gray-500);margin-top:3px}
+.page-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.kpi-card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:18px;display:flex;align-items:flex-start;gap:14px}
+.kpi-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-info p:first-child{font-size:12px;color:var(--gray-500);font-weight:500}
+.kpi-info .kpi-val{font-size:24px;font-weight:700;color:var(--gray-900);line-height:1.2;margin:3px 0}
+.kpi-info .kpi-sub{font-size:11px;color:var(--gray-400)}
+.chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
+.card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:18px}
+.card-title{font-weight:600;font-size:14px;color:var(--gray-900);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.progress-wrap{margin-bottom:20px}
+.progress-bar-bg{background:var(--gray-100);border-radius:999px;height:10px;overflow:hidden;margin:6px 0 4px}
+.progress-bar-fill{height:100%;border-radius:999px;background:var(--accent);transition:width .5s}
+.progress-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--gray-500)}
+.table-wrap{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--gray-50);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+tbody td{padding:10px 14px;font-size:13px;color:var(--gray-700);border-top:1px solid var(--gray-100)}
+tbody tr:hover{background:var(--gray-50)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-aktif,.b-hadir,.b-capai,.b-selesai,.b-diluluskan{background:#d1fae5;color:#065f46}
+.b-akan_datang,.b-daftar,.b-menunggu{background:#dbeafe;color:#1e40af}
+.b-sedang_berjalan{background:#fef9c3;color:#854d0e}
+.b-tidak_aktif,.b-bersara,.b-tidak_hadir,.b-dibatalkan{background:#f3f4f6;color:#374151}
+.b-batal,.b-ditolak,.b-belum_capai{background:#fee2e2;color:#991b1b}
+.b-dalaman{background:#ede9fe;color:#5b21b6}
+.b-luaran{background:#e0e7ff;color:#3730a3}
+.b-atas_talian{background:#ccfbf1;color:#0f766e}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#2563eb}
+.btn-secondary{background:var(--white);color:var(--gray-700);border:1px solid var(--gray-200)}.btn-secondary:hover{background:var(--gray-50)}
+.btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#059669}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#dc2626}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-icon{background:none;border:none;cursor:pointer;padding:5px;border-radius:6px;color:var(--gray-400);transition:all .15s}
+.btn-icon:hover{background:var(--gray-100);color:var(--gray-700)}
+.btn-icon.edit:hover{background:var(--primary-light);color:var(--accent)}
+.btn-icon.del:hover{background:#fee2e2;color:var(--danger)}
+.filter-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.filter-row input,.filter-row select{padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;color:var(--gray-700);background:var(--white);outline:none;transition:border .15s}
+.filter-row input:focus,.filter-row select:focus{border-color:var(--accent)}
+.filter-row input{flex:1;min-width:200px}
+.search-wrap{position:relative;flex:1;min-width:200px}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400)}
+.search-wrap input{padding-left:32px;width:100%}
+.tab-row{display:flex;gap:2px;background:var(--gray-100);padding:3px;border-radius:8px;width:fit-content;margin-bottom:14px}
+.tab-btn{padding:6px 14px;border:none;background:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;color:var(--gray-500);transition:all .15s}
+.tab-btn.active{background:var(--white);color:var(--gray-900);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:14px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-lg{max-width:640px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--gray-200);position:sticky;top:0;background:var(--white);z-index:1}
+.modal-header h2{font-size:15px;font-weight:600}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--gray-200);background:var(--gray-50);display:flex;justify-content:flex-end;gap:10px;border-radius:0 0 14px 14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.span2{grid-column:span 2}
+.form-group label{font-size:12px;font-weight:500;color:var(--gray-700)}
+.form-group input,.form-group select,.form-group textarea{padding:8px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;color:var(--gray-700);background:var(--white);outline:none;font-family:inherit;transition:border .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group textarea{resize:none}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.detail-item p:first-child{font-size:11px;color:var(--gray-500);margin-bottom:3px}
+.detail-item p:last-child{font-size:13px;font-weight:600;color:var(--gray-900)}
+.detail-item.span2{grid-column:span 2}
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--gray-100);font-size:12px;color:var(--gray-500)}
+.pag-btn{padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;background:var(--white);cursor:pointer;font-size:12px;transition:all .15s}
+.pag-btn:hover:not(:disabled){background:var(--gray-50)}
+.pag-btn:disabled{opacity:.4;cursor:default}
+.bajet-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.bajet-card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:20px}
+.bajet-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.bajet-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.bajet-stat{background:var(--gray-50);border-radius:8px;padding:10px;text-align:center}
+.bajet-stat .val{font-size:14px;font-weight:700;color:var(--gray-900)}
+.bajet-stat .lbl{font-size:11px;color:var(--gray-500);margin-top:2px}
+#login-screen{display:none;position:fixed;inset:0;background:linear-gradient(135deg,#172554,#1e3a8a);align-items:center;justify-content:center;z-index:300;padding:16px}
+#login-screen.active{display:flex}
+.login-box{background:var(--white);border-radius:16px;padding:36px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo-img{width:90px;height:90px;object-fit:contain;margin-bottom:12px}
+.login-logo h1{font-size:20px;font-weight:700;color:var(--gray-900)}
+.login-logo p{font-size:12px;color:var(--gray-500);margin-top:3px}
+.login-form .form-group{margin-bottom:16px}
+.login-err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.login-err.show{display:block}
+.laporan-export-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px}
+.export-card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px}
+.export-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.notify-dot{width:8px;height:8px;background:var(--danger);border-radius:50%;display:inline-block}
+.text-center{text-align:center}.jam-ok{color:var(--success);font-weight:700}.jam-fail{color:var(--danger);font-weight:700}
+canvas{max-height:220px}
+.overlay-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90}
+.overlay-bg.show{display:block}
+#menu-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:var(--gray-700)}
+#menu-btn:hover{background:var(--gray-100)}
+@media(max-width:768px){#sidebar{transform:translateX(-100%)}#sidebar.open{transform:translateX(0)}#main{margin-left:0}.chart-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-group.span2{grid-column:span 1}.detail-grid{grid-template-columns:1fr}.detail-item.span2{grid-column:span 1}#menu-btn{display:flex!important}}
+</style>
+</head>
+<body>
+<!-- LOGIN -->
+<div id="login-screen" class="active">
+  <div class="login-box">
+    <div class="login-logo">
+      <img id="login-logo-img" class="login-logo-img" alt="Logo JTMK"/>
+      <h1>Dashboard ULPL</h1>
+      <p>Jabatan Teknologi Maklumat &amp; Komunikasi</p>
+      <p style="font-size:11px;color:#9ca3af">Politeknik Mukah</p>
+    </div>
+    <div class="login-form">
+      <div id="login-err" class="login-err">E-mel atau kata laluan tidak sah.</div>
+      <div class="form-group"><label>Alamat E-mel</label><input type="email" id="inp-email" value="admin@politeknikmukah.edu.my"/></div>
+      <div class="form-group"><label>Kata Laluan</label><input type="password" id="inp-pass" value="password123"/></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="doLogin()">Log Masuk</button>
+    </div>
+    <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:20px">Sistem ULPL JTM Politeknik Mukah &copy; 2026</p>
+  </div>
+</div>
+<div class="overlay-bg" id="overlay-bg" onclick="closeSidebar()"></div>
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sb-logo">
+    <img id="sb-logo-img" class="sb-logo-img" alt="Logo JTMK"/>
+    <div class="sb-logo-text"><p>Dashboard ULPL</p><p>Politeknik Mukah</p></div>
+  </div>
+  <nav id="nav">
+    <a class="nav-item active" onclick="showPage('dashboard')" href="#"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>Dashboard</a>
+    <a class="nav-item" onclick="showPage('staf')" href="#"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4" stroke-width="2"/><path stroke-width="2" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Pengurusan Staf</a>
+    <a class="nav-item" onclick="showPage('latihan')" href="#"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path stroke-width="2" d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Program Latihan</a>
+    <a class="nav-item" onclick="showPage('permohonan')" href="#"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" stroke-width="2"/><path stroke-width="2" d="M9 12h6M9 16h4"/></svg>Permohonan</a>
+    <a class="nav-item" onclick="showPage('bajet')" href="#"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M21 12V7H5a2 2 0 010-4h14v4"/><path stroke-width="2" d="M3 5v14a2 2 0 002 2h16v-5"/><path stroke-width="2" d="M18 12a2 2 0 000 4h4v-4h-4z"/></svg>Bajet</a>
+    <a class="nav-item" onclick="showPage('laporan')" href="#"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M18 20V10M12 20V4M6 20v-6"/></svg>Laporan</a>
+  </nav>
+  <div class="sb-footer"><p>JTM Politeknik Mukah</p><p style="margin-top:2px">Sistem ULPL v1.0</p></div>
+</aside>
+<!-- MAIN -->
+<div id="main" style="display:none">
+  <header id="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="menu-btn" onclick="toggleSidebar()"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <img id="topbar-logo-img" class="topbar-logo" alt="Logo JTMK"/>
+      <span class="notify-dot"></span>
+      <div class="topbar-user">
+        <div class="avatar" id="user-avatar">AD</div>
+        <span id="user-name">Admin ULPL</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Log Keluar</button>
+    </div>
+  </header>
+  <div id="content">
+    <div class="page active" id="page-dashboard">
+      <div class="page-header"><h1>Dashboard ULPL</h1><p>Jabatan Teknologi Maklumat &amp; Komunikasi - Politeknik Mukah &nbsp;<span id="dash-tahun" style="color:var(--accent);font-weight:600"></span></p></div>
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="card progress-wrap" id="bajet-progress-card"></div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-title"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M18 20V10M12 20V4M6 20v-6"/></svg>Trend Jam Latihan Bulanan</div><canvas id="chart-trend"></canvas></div>
+        <div class="card"><div class="card-title"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/></svg>Status Pencapaian KPI</div><canvas id="chart-kpi"></canvas></div>
+      </div>
+      <div class="card"><div class="card-title"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" stroke-width="2"/><path stroke-width="2" d="M16 2v4M8 2v4M3 10h18"/></svg>Program Latihan Akan Datang</div>
+        <div class="table-wrap" style="border:none"><table id="tbl-akan-datang"><thead><tr><th>Program</th><th>Tarikh</th><th>Tempat</th><th>Jam</th><th>Jenis</th><th>Penyertaan</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="page" id="page-staf">
+      <div class="page-header-row page-header"><div><h1>Pengurusan Staf</h1><p>Senarai staf JTM Politeknik Mukah</p></div><button class="btn btn-primary" onclick="openStafModal()"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2.5" d="M12 5v14M5 12h14"/></svg>Tambah Staf</button></div>
+      <div class="filter-row"><div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke-width="2"/></svg><input type="text" id="staf-search" placeholder="Cari nama, no. staf atau jawatan..." oninput="renderStaf()"/></div><select id="staf-status" onchange="renderStaf()"><option value="">Semua Status</option><option value="aktif">Aktif</option><option value="tidak_aktif">Tidak Aktif</option><option value="bersara">Bersara</option></select></div>
+      <div class="table-wrap"><table><thead><tr><th>No. Staf</th><th>Nama</th><th>Jawatan</th><th>Gred</th><th>Unit</th><th>Status</th><th>Tindakan</th></tr></thead><tbody id="tbl-staf-body"></tbody></table><div class="pagination" id="staf-pag"></div></div>
+    </div>
+    <div class="page" id="page-latihan">
+      <div class="page-header-row page-header"><div><h1>Program Latihan</h1><p id="latihan-subtitle">Senarai program latihan</p></div><button class="btn btn-primary" onclick="openLatihanModal()"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2.5" d="M12 5v14M5 12h14"/></svg>Tambah Program</button></div>
+      <div class="filter-row"><div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke-width="2"/></svg><input type="text" id="lat-search" placeholder="Cari tajuk program..." oninput="renderLatihan()"/></div><select id="lat-status" onchange="renderLatihan()"><option value="">Semua Status</option><option value="akan_datang">Akan Datang</option><option value="sedang_berjalan">Sedang Berjalan</option><option value="selesai">Selesai</option><option value="batal">Batal</option></select></div>
+      <div class="table-wrap"><table><thead><tr><th>Tajuk Program</th><th>Tarikh Mula</th><th>Jam Kredit</th><th>Jenis</th><th>Status</th><th>Penyertaan</th><th>Tindakan</th></tr></thead><tbody id="tbl-lat-body"></tbody></table><div class="pagination" id="lat-pag"></div></div>
+    </div>
+    <div class="page" id="page-permohonan">
+      <div class="page-header"><h1>Permohonan Latihan</h1><p>Semak dan luluskan permohonan staf</p></div>
+      <div class="tab-row" id="perm-tabs"><button class="tab-btn active" onclick="setPemTab('menunggu',this)">Menunggu</button><button class="tab-btn" onclick="setPemTab('diluluskan',this)">Diluluskan</button><button class="tab-btn" onclick="setPemTab('ditolak',this)">Ditolak</button><button class="tab-btn" onclick="setPemTab('',this)">Semua</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Nama Staf</th><th>Program Latihan</th><th>Tarikh Latihan</th><th>Tarikh Mohon</th><th>Status</th><th>Tindakan</th></tr></thead><tbody id="tbl-perm-body"></tbody></table><div class="pagination" id="perm-pag"></div></div>
+    </div>
+    <div class="page" id="page-bajet">
+      <div class="page-header-row page-header"><div><h1>Pengurusan Bajet</h1><p>Peruntukan dan penggunaan bajet latihan</p></div><button class="btn btn-primary" onclick="openBajetModal(null)">+ Tetapkan Bajet</button></div>
+      <div class="bajet-cards" id="bajet-cards"></div>
+    </div>
+    <div class="page" id="page-laporan">
+      <div class="page-header"><h1>Laporan</h1><p id="laporan-subtitle">Eksport data latihan staf</p></div>
+      <div class="laporan-export-cards">
+        <div class="export-card"><div class="export-icon" style="background:#dbeafe"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#3b82f6"><path stroke-width="2" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4" stroke-width="2"/></svg></div><div style="flex:1"><p style="font-weight:600;font-size:13px">Laporan Staf</p><p style="font-size:11px;color:var(--gray-500)">Jam latihan &amp; status KPI setiap staf</p></div><button class="btn btn-secondary btn-sm" onclick="eksportStaf()"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10" stroke-width="2"/><line x1="12" y1="15" x2="12" y2="3" stroke-width="2"/></svg>CSV</button></div>
+        <div class="export-card"><div class="export-icon" style="background:#ede9fe"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#7c3aed"><path stroke-width="2" d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path stroke-width="2" d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><div style="flex:1"><p style="font-weight:600;font-size:13px">Laporan Latihan</p><p style="font-size:11px;color:var(--gray-500)">Senarai semua program latihan</p></div><button class="btn btn-secondary btn-sm" onclick="eksportLatihan()"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10" stroke-width="2"/><line x1="12" y1="15" x2="12" y2="3" stroke-width="2"/></svg>CSV</button></div>
+      </div>
+      <div class="tab-row"><button class="tab-btn active" onclick="setLapTab('staf',this)">Staf</button><button class="tab-btn" onclick="setLapTab('latihan',this)">Latihan</button></div>
+      <div class="table-wrap" id="laporan-table"></div>
+    </div>
+  </div>
+</div>
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-staf"><div class="modal"><div class="modal-header"><h2 id="staf-modal-title">Tambah Staf</h2><button class="btn-icon" onclick="closeModal('modal-staf')"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="modal-body"><input type="hidden" id="staf-edit-id"/><div class="form-grid"><div class="form-group"><label>No. Staf *</label><input id="f-no_staf"/></div><div class="form-group span2"><label>Nama Penuh *</label><input id="f-nama"/></div><div class="form-group"><label>Jawatan *</label><input id="f-jawatan"/></div><div class="form-group"><label>Gred *</label><input id="f-gred"/></div><div class="form-group"><label>Unit</label><input id="f-unit"/></div><div class="form-group"><label>Telefon</label><input id="f-telefon"/></div><div class="form-group span2"><label>E-mel</label><input type="email" id="f-email"/></div><div class="form-group"><label>Status</label><select id="f-status"><option value="aktif">Aktif</option><option value="tidak_aktif">Tidak Aktif</option><option value="bersara">Bersara</option></select></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modal-staf')">Batal</button><button class="btn btn-primary" onclick="saveStaf()">Simpan</button></div></div></div>
+<div class="modal-overlay" id="modal-latihan"><div class="modal modal-lg"><div class="modal-header"><h2 id="lat-modal-title">Tambah Program Latihan</h2><button class="btn-icon" onclick="closeModal('modal-latihan')"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="modal-body"><input type="hidden" id="lat-edit-id"/><div class="form-grid"><div class="form-group span2"><label>Tajuk Program *</label><input id="fl-tajuk"/></div><div class="form-group"><label>Penganjur</label><input id="fl-anjur"/></div><div class="form-group"><label>Tempat</label><input id="fl-tempat"/></div><div class="form-group"><label>Tarikh Mula *</label><input type="date" id="fl-tarikh_mula"/></div><div class="form-group"><label>Tarikh Tamat *</label><input type="date" id="fl-tarikh_tamat"/></div><div class="form-group"><label>Jam Kredit *</label><input type="number" step="0.5" min="0" id="fl-jam_kredit"/></div><div class="form-group"><label>Kos (RM)</label><input type="number" step="0.01" min="0" id="fl-kos" value="0"/></div><div class="form-group"><label>Jenis</label><select id="fl-jenis"><option value="luaran">Luaran</option><option value="dalaman">Dalaman</option><option value="atas_talian">Atas Talian</option></select></div><div class="form-group"><label>Had Penyertaan</label><input type="number" min="1" id="fl-had" placeholder="Tiada had"/></div><div class="form-group"><label>Status</label><select id="fl-status"><option value="akan_datang">Akan Datang</option><option value="sedang_berjalan">Sedang Berjalan</option><option value="selesai">Selesai</option><option value="batal">Batal</option></select></div><div class="form-group span2"><label>Penerangan</label><textarea id="fl-penerangan" rows="3"></textarea></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modal-latihan')">Batal</button><button class="btn btn-primary" onclick="saveLatihan()">Simpan</button></div></div></div>
+<div class="modal-overlay" id="modal-perm"><div class="modal"><div class="modal-header"><h2>Butiran Permohonan</h2><button class="btn-icon" onclick="closeModal('modal-perm')"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="modal-body" id="perm-detail"></div></div></div>
+<div class="modal-overlay" id="modal-bajet"><div class="modal"><div class="modal-header"><h2 id="bajet-modal-title">Tetapkan Bajet</h2><button class="btn-icon" onclick="closeModal('modal-bajet')"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="modal-body"><input type="hidden" id="bajet-edit-tahun"/><div class="form-grid"><div class="form-group"><label>Tahun *</label><input type="number" id="fb-tahun" placeholder="2026"/></div><div class="form-group"><label>Peruntukan (RM) *</label><input type="number" step="0.01" min="0" id="fb-peruntukan"/></div><div class="form-group"><label>Digunakan (RM)</label><input type="number" step="0.01" min="0" id="fb-digunakan" value="0"/></div><div class="form-group span2"><label>Catatan</label><textarea id="fb-catatan" rows="2"></textarea></div></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modal-bajet')">Batal</button><button class="btn btn-primary" onclick="saveBajet()">Simpan</button></div></div></div>
+<script>
+// ── LOGO: Muat logo JTMK.jpeg sebagai data URI ──
+(function(){
+  var imgs=['login-logo-img','sb-logo-img','topbar-logo-img'];
+  // Cuba muat dari fail relatif dahulu
+  imgs.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.src='logo JTMK.jpeg';
+  });
+})();
+const TAHUN=2026;
+let DB={
+  staf:[
+    {id:1,no_staf:'JTM001',nama:'Ahmad Fadzil bin Hamid',jawatan:'Ketua Jabatan',gred:'DH52',unit:'Pengurusan',telefon:'016-8821001',email:'ahmad.fadzil@politeknikmukah.edu.my',status:'aktif'},
+    {id:2,no_staf:'JTM002',nama:'Nurul Ain binti Rosli',jawatan:'Pensyarah Kanan',gred:'DH48',unit:'Rangkaian',telefon:'016-8821002',email:'nurul.ain@politeknikmukah.edu.my',status:'aktif'},
+    {id:3,no_staf:'JTM003',nama:'Muhammad Haziq bin Zulkifli',jawatan:'Pensyarah',gred:'DH41',unit:'Pengaturcaraan',telefon:'016-8821003',email:'haziq@politeknikmukah.edu.my',status:'aktif'},
+    {id:4,no_staf:'JTM004',nama:'Siti Norzahidah binti Bakar',jawatan:'Pensyarah',gred:'DH41',unit:'Multimedia',telefon:'016-8821004',email:'norzahidah@politeknikmukah.edu.my',status:'aktif'},
+    {id:5,no_staf:'JTM005',nama:'Mohd Irfan bin Abdullah',jawatan:'Pensyarah',gred:'DH41',unit:'Pengaturcaraan',telefon:'016-8821005',email:'irfan@politeknikmukah.edu.my',status:'aktif'},
+    {id:6,no_staf:'JTM006',nama:'Farah Hana binti Mohd Yusof',jawatan:'Pensyarah Kanan',gred:'DH48',unit:'Keselamatan IT',telefon:'016-8821006',email:'farah.hana@politeknikmukah.edu.my',status:'aktif'},
+    {id:7,no_staf:'JTM007',nama:'Zulhilmi bin Othman',jawatan:'Pensyarah',gred:'DH41',unit:'Rangkaian',telefon:'016-8821007',email:'zulhilmi@politeknikmukah.edu.my',status:'aktif'},
+    {id:8,no_staf:'JTM008',nama:'Ruzaini binti Samat',jawatan:'Peg. Teknologi Maklumat',gred:'FA29',unit:'Sokongan ICT',telefon:'016-8821008',email:'ruzaini@politeknikmukah.edu.my',status:'aktif'},
+    {id:9,no_staf:'JTM009',nama:'Hasrul bin Jaafar',jawatan:'Pensyarah',gred:'DH41',unit:'Multimedia',telefon:'016-8821009',email:'hasrul@politeknikmukah.edu.my',status:'aktif'},
+    {id:10,no_staf:'JTM010',nama:'Nadia Liyana binti Amran',jawatan:'Pensyarah',gred:'DH41',unit:'Pengaturcaraan',telefon:'016-8821010',email:'nadia@politeknikmukah.edu.my',status:'aktif'},
+    {id:11,no_staf:'JTM011',nama:'Khairul Nizam bin Ismail',jawatan:'Pensyarah Kanan',gred:'DH48',unit:'Rangkaian',telefon:'016-8821011',email:'khairul@politeknikmukah.edu.my',status:'aktif'},
+    {id:12,no_staf:'JTM012',nama:'Wan Syafiqah binti Wan Omar',jawatan:'Pensyarah',gred:'DH41',unit:'Keselamatan IT',telefon:'016-8821012',email:'syafiqah@politeknikmukah.edu.my',status:'aktif'},
+    {id:13,no_staf:'JTM013',nama:'Ezwan Firdaus bin Ramli',jawatan:'Pembantu Teknik',gred:'J22',unit:'Sokongan ICT',telefon:'016-8821013',email:'ezwan@politeknikmukah.edu.my',status:'aktif'},
+    {id:14,no_staf:'JTM014',nama:'Suzana binti Mat Daud',jawatan:'Pensyarah',gred:'DH41',unit:'Multimedia',telefon:'016-8821014',email:'suzana@politeknikmukah.edu.my',status:'aktif'},
+    {id:15,no_staf:'JTM015',nama:'Luqmanul Hakim bin Hashim',jawatan:'Pensyarah',gred:'DH41',unit:'Pengaturcaraan',telefon:'016-8821015',email:'luqman@politeknikmukah.edu.my',status:'aktif'},
+  ],
+  latihan:[
+    {id:1,tajuk:'Kursus Python untuk Pemula',anjur:'JTM Politeknik Mukah',tempat:'Makmal Komputer A',tarikh_mula:'2026-01-15',tarikh_tamat:'2026-01-16',jam_kredit:14,jenis:'dalaman',kos:0,status:'selesai',had:null,penyertaan:[1,2,3,4,5,6,7,8,9,10,11,12]},
+    {id:2,tajuk:'Seminar Keselamatan Siber 2026',anjur:'CyberSecurity Malaysia',tempat:'Hotel Grand Merdeka, KL',tarikh_mula:'2026-02-10',tarikh_tamat:'2026-02-10',jam_kredit:7,jenis:'luaran',kos:350,status:'selesai',had:null,penyertaan:[1,2,6,11,12]},
+    {id:3,tajuk:'Workshop Docker & Kubernetes',anjur:'JTM Politeknik Mukah',tempat:'Makmal Komputer B',tarikh_mula:'2026-02-20',tarikh_tamat:'2026-02-22',jam_kredit:21,jenis:'dalaman',kos:0,status:'selesai',had:null,penyertaan:[3,5,7,9,10,13,14,15]},
+    {id:4,tajuk:'Kursus Pembangunan Aplikasi Web React',anjur:'HRDF',tempat:'Institut Latihan HRDF, KL',tarikh_mula:'2026-03-04',tarikh_tamat:'2026-03-06',jam_kredit:21,jenis:'luaran',kos:1200,status:'selesai',had:null,penyertaan:[3,5,10,14,15]},
+    {id:5,tajuk:'Kursus Pengurusan Projek Agile/Scrum',anjur:'PMI Malaysia Chapter',tempat:'Pusat Konvensyen Mukah',tarikh_mula:'2026-04-08',tarikh_tamat:'2026-04-09',jam_kredit:14,jenis:'luaran',kos:500,status:'selesai',had:null,penyertaan:[1,2,4,6,8,11]},
+    {id:6,tajuk:'Latihan Pemantapan P&P',anjur:'Jabatan Politeknik & KK',tempat:'Politeknik Mukah',tarikh_mula:'2026-04-22',tarikh_tamat:'2026-04-24',jam_kredit:21,jenis:'dalaman',kos:0,status:'selesai',had:null,penyertaan:[1,2,3,4,5,6,7,8,9,10,11,12]},
+    {id:7,tajuk:'Kursus Machine Learning Asas',anjur:'AWS Malaysia',tempat:'Atas Talian (Zoom)',tarikh_mula:'2026-05-13',tarikh_tamat:'2026-05-13',jam_kredit:7,jenis:'atas_talian',kos:0,status:'selesai',had:null,penyertaan:[3,5,10,14,15]},
+    {id:8,tajuk:'Seminar Transformasi Digital TVET',anjur:'JPK Malaysia',tempat:'Hotel Merdeka Palace, Kuching',tarikh_mula:'2026-06-03',tarikh_tamat:'2026-06-04',jam_kredit:14,jenis:'luaran',kos:450,status:'selesai',had:null,penyertaan:[1,2,4,6,8,11]},
+    {id:9,tajuk:'Kursus Laravel 11 & REST API',anjur:'JTM Politeknik Mukah',tempat:'Makmal Komputer A',tarikh_mula:'2026-07-07',tarikh_tamat:'2026-07-09',jam_kredit:21,jenis:'dalaman',kos:0,status:'selesai',had:null,penyertaan:[3,5,7,9,10,13,14,15]},
+    {id:10,tajuk:'Pembangunan Profesional & Etika Pensyarah',anjur:'Jabatan Politeknik & KK',tempat:'Politeknik Mukah',tarikh_mula:'2026-08-18',tarikh_tamat:'2026-08-19',jam_kredit:14,jenis:'dalaman',kos:0,status:'selesai',had:null,penyertaan:[1,2,3,4,5,6,7,8,9,10,11,12,13,14]},
+    {id:11,tajuk:'Kursus Cloud Computing AWS Essentials',anjur:'AWS Malaysia',tempat:'Atas Talian (Zoom)',tarikh_mula:'2026-09-10',tarikh_tamat:'2026-09-10',jam_kredit:7,jenis:'atas_talian',kos:0,status:'selesai',had:null,penyertaan:[2,6,11,12]},
+    {id:12,tajuk:'Kursus IoT & Embedded Systems',anjur:'IEEE Malaysia Section',tempat:'UNIMAS, Kota Samarahan',tarikh_mula:'2026-10-14',tarikh_tamat:'2026-10-16',jam_kredit:21,jenis:'luaran',kos:800,status:'selesai',had:null,penyertaan:[3,5,7,9,13]},
+    {id:13,tajuk:'Kursus DevOps & CI/CD Pipeline',anjur:'JTM Politeknik Mukah',tempat:'Makmal Komputer B',tarikh_mula:'2026-12-02',tarikh_tamat:'2026-12-04',jam_kredit:21,jenis:'dalaman',kos:0,status:'akan_datang',had:20,penyertaan:[3,7]},
+    {id:14,tajuk:'Seminar AI dalam Pendidikan TVET',anjur:'Jabatan Politeknik & KK',tempat:'Hotel Riverside Majestic, Kuching',tarikh_mula:'2026-12-09',tarikh_tamat:'2026-12-10',jam_kredit:14,jenis:'luaran',kos:500,status:'akan_datang',had:10,penyertaan:[1,2]},
+    {id:15,tajuk:'Bengkel Power BI & Data Analytics',anjur:'Microsoft Malaysia',tempat:'Atas Talian (Teams)',tarikh_mula:'2026-12-15',tarikh_tamat:'2026-12-16',jam_kredit:14,jenis:'atas_talian',kos:0,status:'akan_datang',had:30,penyertaan:[4,8]},
+  ],
+  permohonan:[
+    {id:1,staff_id:3,latihan_id:13,status:'menunggu',sebab:'Relevan dengan keperluan jabatan.',catatan_urus:'',tarikh_mohon:'2026-11-15'},
+    {id:2,staff_id:5,latihan_id:14,status:'menunggu',sebab:'Ingin tingkatkan kemahiran pedagogi.',catatan_urus:'',tarikh_mohon:'2026-11-16'},
+    {id:3,staff_id:10,latihan_id:15,status:'menunggu',sebab:'Keperluan analisis data projek.',catatan_urus:'',tarikh_mohon:'2026-11-17'},
+    {id:4,staff_id:1,latihan_id:2,status:'diluluskan',sebab:'Ketua jabatan perlu hadir.',catatan_urus:'Diluluskan. Sila bawa surat pengenalan jabatan.',tarikh_mohon:'2026-01-20'},
+    {id:5,staff_id:4,latihan_id:4,status:'ditolak',sebab:'Minta kelulusan untuk hadir.',catatan_urus:'Ditolak - peruntukan perjalanan tidak mencukupi.',tarikh_mohon:'2026-02-25'},
+    {id:6,staff_id:9,latihan_id:13,status:'menunggu',sebab:'Berminat untuk belajar DevOps.',catatan_urus:'',tarikh_mohon:'2026-11-18'},
+    {id:7,staff_id:12,latihan_id:14,status:'menunggu',sebab:'Berkaitan dengan pengajaran AI.',catatan_urus:'',tarikh_mohon:'2026-11-18'},
+  ],
+  bajet:[
+    {tahun:2025,peruntukan:60000,digunakan:58450,catatan:'Tahun lepas - hampir habis digunakan.'},
+    {tahun:2026,peruntukan:75000,digunakan:42350,catatan:'Tahun semasa - masih ada baki.'},
+  ],
+  nextId:{staf:16,latihan:16,perm:8}
+};
+function fmtTarikh(d){if(!d)return'---';const[y,m,dd]=d.split('-');const mn=['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];return dd+' '+mn[+m-1]+' '+y}
+function fmtRM(v){return'RM '+Number(v||0).toLocaleString('ms-MY',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function badge(s){const L={aktif:'Aktif',tidak_aktif:'Tidak Aktif',bersara:'Bersara',akan_datang:'Akan Datang',sedang_berjalan:'Sedang Berjalan',selesai:'Selesai',batal:'Batal',daftar:'Daftar',hadir:'Hadir',tidak_hadir:'Tidak Hadir',menunggu:'Menunggu',diluluskan:'Diluluskan',ditolak:'Ditolak',dibatalkan:'Dibatalkan',dalaman:'Dalaman',luaran:'Luaran',atas_talian:'Atas Talian'};return'<span class="badge b-'+s+'">'+(L[s]||s)+'</span>'}
+function getJamStaf(id){let j=0;DB.latihan.forEach(l=>{if(l.status==='selesai'&&l.penyertaan.includes(id))j+=l.jam_kredit});return j}
+const USERS=[{email:'admin@politeknikmukah.edu.my',pass:'password123',name:'Admin ULPL',role:'admin',init:'AD'},{email:'urussetia@politeknikmukah.edu.my',pass:'password123',name:'Urus Setia JTM',role:'urus_setia',init:'US'}];
+let currentUser=null;
+function doLogin(){const e=document.getElementById('inp-email').value,p=document.getElementById('inp-pass').value,u=USERS.find(x=>x.email===e&&x.pass===p);if(!u){document.getElementById('login-err').classList.add('show');return;}currentUser=u;document.getElementById('login-screen').classList.remove('active');document.getElementById('main').style.display='flex';document.getElementById('user-name').textContent=u.name;document.getElementById('user-avatar').textContent=u.init;initDashboard()}
+function doLogout(){currentUser=null;document.getElementById('main').style.display='none';document.getElementById('login-screen').classList.add('active')}
+document.getElementById('inp-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+const PAGE_TITLES={dashboard:'Dashboard',staf:'Pengurusan Staf',latihan:'Program Latihan',permohonan:'Permohonan',bajet:'Bajet',laporan:'Laporan'};
+function showPage(name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick').includes("'"+name+"'"))n.classList.add('active')});document.getElementById('topbar-title').textContent=PAGE_TITLES[name];closeSidebar();if(name==='staf')renderStaf();if(name==='latihan')renderLatihan();if(name==='permohonan')renderPermohonan();if(name==='bajet')renderBajet();if(name==='laporan'){renderLaporan();document.getElementById('laporan-subtitle').textContent='Eksport data latihan staf tahun '+TAHUN}}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay-bg').classList.toggle('show')}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay-bg').classList.remove('show')}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}));
+let chartTrend=null,chartKpi=null;
+function initDashboard(){
+  document.getElementById('dash-tahun').textContent='Tahun '+TAHUN;
+  document.getElementById('latihan-subtitle').textContent='Senarai program latihan tahun '+TAHUN;
+  const aktif=DB.staf.filter(s=>s.status==='aktif'),capai=aktif.filter(s=>getJamStaf(s.id)>=42),bajet=DB.bajet.find(b=>b.tahun===TAHUN)||{peruntukan:0,digunakan:0};
+  document.getElementById('kpi-grid').innerHTML='<div class="kpi-card"><div class="kpi-icon" style="background:#dbeafe"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#3b82f6"><path stroke-width="2" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4" stroke-width="2"/><path stroke-width="2" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><div class="kpi-info"><p>Jumlah Staf Aktif</p><div class="kpi-val">'+aktif.length+'</div><div class="kpi-sub">Staf dalam perkhidmatan</div></div></div>'+'<div class="kpi-card"><div class="kpi-icon" style="background:#d1fae5"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#10b981"><path stroke-width="2" d="M20 6L9 17l-5-5"/></svg></div><div class="kpi-info"><p>Capai KPI (42 jam)</p><div class="kpi-val">'+capai.length+'</div><div class="kpi-sub">'+(aktif.length>0?Math.round(capai.length/aktif.length*100):0)+'% daripada staf aktif</div></div></div>'+'<div class="kpi-card"><div class="kpi-icon" style="background:#fee2e2"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#ef4444"><path stroke-width="2" d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/></svg></div><div class="kpi-info"><p>Belum Capai KPI</p><div class="kpi-val">'+(aktif.length-capai.length)+'</div><div class="kpi-sub">Perlu perhatian segera</div></div></div>'+'<div class="kpi-card"><div class="kpi-icon" style="background:#ede9fe"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#7c3aed"><path stroke-width="2" d="M18 20V10M12 20V4M6 20v-6"/></svg></div><div class="kpi-info"><p>Program Latihan</p><div class="kpi-val">'+DB.latihan.length+'</div><div class="kpi-sub">Program tahun semasa</div></div></div>';
+  const pct=bajet.peruntukan>0?Math.min(Math.round(bajet.digunakan/bajet.peruntukan*100),100):0,bc=pct>=90?'var(--danger)':pct>=70?'var(--warning)':'var(--accent)';
+  document.getElementById('bajet-progress-card').innerHTML='<div class="card-title"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M21 12V7H5a2 2 0 010-4h14v4"/><path stroke-width="2" d="M3 5v14a2 2 0 002 2h16v-5"/><path stroke-width="2" d="M18 12a2 2 0 000 4h4v-4h-4z"/></svg> Bajet Latihan '+TAHUN+'</div><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:'+pct+'%;background:'+bc+'"></div></div><div class="progress-labels"><span>Digunakan: <strong>'+fmtRM(bajet.digunakan)+'</strong></span><span>'+pct+'% | Peruntukan: <strong>'+fmtRM(bajet.peruntukan)+'</strong></span></div>';
+  const td=Array(12).fill(0);DB.latihan.filter(l=>l.status==='selesai').forEach(l=>{td[parseInt(l.tarikh_mula.split('-')[1])-1]+=l.penyertaan.length*l.jam_kredit});
+  if(chartTrend)chartTrend.destroy();
+  chartTrend=new Chart(document.getElementById('chart-trend'),{type:'bar',data:{labels:['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'],datasets:[{label:'Jumlah Jam Latihan',data:td,backgroundColor:'rgba(59,130,246,.75)',borderRadius:5}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:11}}},x:{ticks:{font:{size:11}}}}}});
+  if(chartKpi)chartKpi.destroy();
+  chartKpi=new Chart(document.getElementById('chart-kpi'),{type:'doughnut',data:{labels:['Capai KPI','Belum Capai'],datasets:[{data:[capai.length,aktif.length-capai.length],backgroundColor:['#10b981','#ef4444'],borderWidth:0}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}}}});
+  const akan=DB.latihan.filter(l=>l.status==='akan_datang'),tbody=document.querySelector('#tbl-akan-datang tbody');
+  tbody.innerHTML=akan.length===0?'<tr><td colspan="6" class="text-center" style="padding:30px;color:var(--gray-400)">Tiada program akan datang.</td></tr>':akan.map(l=>'<tr><td style="font-weight:600">'+l.tajuk+'</td><td style="white-space:nowrap">'+fmtTarikh(l.tarikh_mula)+'</td><td>'+(l.tempat||'---')+'</td><td>'+l.jam_kredit+' jam</td><td>'+badge(l.jenis)+'</td><td>'+l.penyertaan.length+(l.had?'/'+l.had:'')+'</td></tr>').join('');
+}
+let stafPage=1;const PER_PAGE=8;
+function filterStaf(){const q=document.getElementById('staf-search').value.toLowerCase(),st=document.getElementById('staf-status').value;return DB.staf.filter(s=>{const m=!q||(s.nama.toLowerCase().includes(q)||s.no_staf.toLowerCase().includes(q)||s.jawatan.toLowerCase().includes(q));return m&&(!st||s.status===st)})}
+function renderStaf(){const rows=filterStaf(),total=rows.length,start=(stafPage-1)*PER_PAGE,page=rows.slice(start,start+PER_PAGE);document.getElementById('tbl-staf-body').innerHTML=page.length===0?'<tr><td colspan="7" class="text-center" style="padding:30px;color:var(--gray-400)">Tiada rekod ditemui.</td></tr>':page.map(s=>'<tr><td>'+s.no_staf+'</td><td style="font-weight:600">'+s.nama+'</td><td>'+s.jawatan+'</td><td>'+s.gred+'</td><td>'+(s.unit||'---')+'</td><td>'+badge(s.status)+'</td><td><button class="btn-icon edit" onclick="openStafModal('+s.id+')" title="Edit"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button> <button class="btn-icon del" onclick="hapusStaf('+s.id+')" title="Padam"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td></tr>').join('');const lp=Math.ceil(total/PER_PAGE)||1;document.getElementById('staf-pag').innerHTML='<span>Jumlah: <strong>'+total+'</strong> rekod</span><div style="display:flex;align-items:center;gap:6px"><button class="pag-btn" '+(stafPage<=1?'disabled':'')+' onclick="stafPage--;renderStaf()">&#8249;</button><span>'+stafPage+'/'+lp+'</span><button class="pag-btn" '+(stafPage>=lp?'disabled':'')+' onclick="stafPage++;renderStaf()">&#8250;</button></div>'}
+function openStafModal(id=null){const s=id?DB.staf.find(x=>x.id===id):null;document.getElementById('staf-modal-title').textContent=s?'Kemaskini Staf':'Tambah Staf Baru';document.getElementById('staf-edit-id').value=s?s.id:'';['no_staf','nama','jawatan','gred','unit','telefon','email'].forEach(k=>document.getElementById('f-'+k).value=s?s[k]||'':'');document.getElementById('f-status').value=s?s.status:'aktif';openModal('modal-staf')}
+function saveStaf(){const id=document.getElementById('staf-edit-id').value,data={no_staf:document.getElementById('f-no_staf').value.trim(),nama:document.getElementById('f-nama').value.trim(),jawatan:document.getElementById('f-jawatan').value.trim(),gred:document.getElementById('f-gred').value.trim(),unit:document.getElementById('f-unit').value.trim(),telefon:document.getElementById('f-telefon').value.trim(),email:document.getElementById('f-email').value.trim(),status:document.getElementById('f-status').value};if(!data.no_staf||!data.nama||!data.jawatan||!data.gred){alert('Sila isi semua medan wajib (*).');return;}if(id){const idx=DB.staf.findIndex(x=>x.id==id);DB.staf[idx]={...DB.staf[idx],...data};}else{DB.staf.push({id:DB.nextId.staf++,...data});}closeModal('modal-staf');renderStaf()}
+function hapusStaf(id){const s=DB.staf.find(x=>x.id===id);if(confirm('Padam staf "'+s.nama+'"?')){DB.staf=DB.staf.filter(x=>x.id!==id);renderStaf()}}
+let latPage=1;
+function filterLatihan(){const q=document.getElementById('lat-search').value.toLowerCase(),st=document.getElementById('lat-status').value;return DB.latihan.filter(l=>(!q||l.tajuk.toLowerCase().includes(q))&&(!st||l.status===st))}
+function renderLatihan(){const rows=filterLatihan(),total=rows.length,start=(latPage-1)*PER_PAGE,page=rows.slice(start,start+PER_PAGE);document.getElementById('tbl-lat-body').innerHTML=page.length===0?'<tr><td colspan="7" class="text-center" style="padding:30px;color:var(--gray-400)">Tiada rekod.</td></tr>':page.map(l=>'<tr><td style="font-weight:600;max-width:220px">'+l.tajuk+'</td><td style="white-space:nowrap">'+fmtTarikh(l.tarikh_mula)+'</td><td>'+l.jam_kredit+' jam</td><td>'+badge(l.jenis)+'</td><td>'+badge(l.status)+'</td><td>'+l.penyertaan.length+(l.had?'/'+l.had:'')+'</td><td><button class="btn-icon edit" onclick="openLatihanModal('+l.id+')" title="Edit"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button> <button class="btn-icon del" onclick="hapusLatihan('+l.id+')" title="Padam"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td></tr>').join('');const lp=Math.ceil(total/PER_PAGE)||1;document.getElementById('lat-pag').innerHTML='<span>Jumlah: <strong>'+total+'</strong> rekod</span><div style="display:flex;align-items:center;gap:6px"><button class="pag-btn" '+(latPage<=1?'disabled':'')+' onclick="latPage--;renderLatihan()">&#8249;</button><span>'+latPage+'/'+lp+'</span><button class="pag-btn" '+(latPage>=lp?'disabled':'')+' onclick="latPage++;renderLatihan()">&#8250;</button></div>'}
+function openLatihanModal(id=null){const l=id?DB.latihan.find(x=>x.id===id):null;document.getElementById('lat-modal-title').textContent=l?'Kemaskini Program Latihan':'Tambah Program Latihan';document.getElementById('lat-edit-id').value=l?l.id:'';['tajuk','anjur','tempat','tarikh_mula','tarikh_tamat','jam_kredit','kos','penerangan'].forEach(k=>document.getElementById('fl-'+k).value=l?l[k]||'':'');document.getElementById('fl-had').value=l&&l.had?l.had:'';document.getElementById('fl-jenis').value=l?l.jenis:'luaran';document.getElementById('fl-status').value=l?l.status:'akan_datang';openModal('modal-latihan')}
+function saveLatihan(){const id=document.getElementById('lat-edit-id').value,data={tajuk:document.getElementById('fl-tajuk').value.trim(),anjur:document.getElementById('fl-anjur').value.trim(),tempat:document.getElementById('fl-tempat').value.trim(),tarikh_mula:document.getElementById('fl-tarikh_mula').value,tarikh_tamat:document.getElementById('fl-tarikh_tamat').value,jam_kredit:parseFloat(document.getElementById('fl-jam_kredit').value)||0,kos:parseFloat(document.getElementById('fl-kos').value)||0,jenis:document.getElementById('fl-jenis').value,had:parseInt(document.getElementById('fl-had').value)||null,status:document.getElementById('fl-status').value,penerangan:document.getElementById('fl-penerangan').value};if(!data.tajuk||!data.tarikh_mula||!data.tarikh_tamat){alert('Sila isi semua medan wajib (*).');return;}if(id){const idx=DB.latihan.findIndex(x=>x.id==id);DB.latihan[idx]={...DB.latihan[idx],...data};}else{DB.latihan.push({id:DB.nextId.latihan++,...data,penyertaan:[]});}closeModal('modal-latihan');renderLatihan()}
+function hapusLatihan(id){const l=DB.latihan.find(x=>x.id===id);if(confirm('Padam program "'+l.tajuk+'"?')){DB.latihan=DB.latihan.filter(x=>x.id!==id);renderLatihan()}}
+let permTab='menunggu',permPage=1;
+function setPemTab(tab,el){permTab=tab;permPage=1;document.querySelectorAll('#perm-tabs .tab-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderPermohonan()}
+function renderPermohonan(){const rows=DB.permohonan.filter(p=>!permTab||p.status===permTab),total=rows.length,start=(permPage-1)*PER_PAGE,page=rows.slice(start,start+PER_PAGE);document.getElementById('tbl-perm-body').innerHTML=page.length===0?'<tr><td colspan="6" class="text-center" style="padding:30px;color:var(--gray-400)">Tiada rekod.</td></tr>':page.map(p=>{const s=DB.staf.find(x=>x.id===p.staff_id),l=DB.latihan.find(x=>x.id===p.latihan_id);return'<tr><td style="font-weight:600">'+(s?s.nama:'---')+'</td><td style="max-width:200px">'+(l?l.tajuk:'---')+'</td><td style="white-space:nowrap">'+(l?fmtTarikh(l.tarikh_mula):'---')+'</td><td style="white-space:nowrap">'+fmtTarikh(p.tarikh_mohon)+'</td><td>'+badge(p.status)+'</td><td><button class="btn-icon edit" onclick="lihatPerm('+p.id+')" title="Lihat"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button></td></tr>'}).join('');const lp=Math.ceil(total/PER_PAGE)||1;document.getElementById('perm-pag').innerHTML='<span>Jumlah: <strong>'+total+'</strong> rekod</span><div style="display:flex;align-items:center;gap:6px"><button class="pag-btn" '+(permPage<=1?'disabled':'')+' onclick="permPage--;renderPermohonan()">&#8249;</button><span>'+permPage+'/'+lp+'</span><button class="pag-btn" '+(permPage>=lp?'disabled':'')+' onclick="permPage++;renderPermohonan()">&#8250;</button></div>'}
+function lihatPerm(id){const p=DB.permohonan.find(x=>x.id===id),s=DB.staf.find(x=>x.id===p.staff_id),l=DB.latihan.find(x=>x.id===p.latihan_id);let html='<div class="detail-grid"><div class="detail-item"><p>Nama Staf</p><p>'+(s?s.nama:'---')+'</p></div><div class="detail-item"><p>No. Staf</p><p>'+(s?s.no_staf:'---')+'</p></div><div class="detail-item span2"><p>Program Latihan</p><p>'+(l?l.tajuk:'---')+'</p></div><div class="detail-item"><p>Tarikh Latihan</p><p>'+(l?fmtTarikh(l.tarikh_mula):'---')+'</p></div><div class="detail-item"><p>Jam Kredit</p><p>'+(l?l.jam_kredit+' jam':'---')+'</p></div><div class="detail-item"><p>Tarikh Mohon</p><p>'+fmtTarikh(p.tarikh_mohon)+'</p></div><div class="detail-item"><p>Status</p><p>'+badge(p.status)+'</p></div>'+(p.sebab?'<div class="detail-item span2"><p>Sebab Permohonan</p><p style="background:var(--gray-50);padding:8px;border-radius:6px">'+p.sebab+'</p></div>':'')+(p.catatan_urus?'<div class="detail-item span2"><p>Catatan Urus Setia</p><p style="background:var(--gray-50);padding:8px;border-radius:6px">'+p.catatan_urus+'</p></div>':'')+'</div>';if(p.status==='menunggu')html+='<div style="border-top:1px solid var(--gray-200);padding-top:14px"><div class="form-group" style="margin-bottom:10px"><label>Catatan Urus Setia</label><textarea id="perm-catatan" rows="3" placeholder="Catatan (wajib untuk tolak)"></textarea></div><div style="display:flex;gap:10px"><button class="btn btn-success" style="flex:1;justify-content:center" onclick="luluskanPerm('+id+')">&#10003; Luluskan</button><button class="btn btn-danger" style="flex:1;justify-content:center" onclick="tolakPerm('+id+')">&#10007; Tolak</button></div></div>';document.getElementById('perm-detail').innerHTML=html;openModal('modal-perm')}
+function luluskanPerm(id){const c=document.getElementById('perm-catatan').value,idx=DB.permohonan.findIndex(x=>x.id===id);DB.permohonan[idx].status='diluluskan';DB.permohonan[idx].catatan_urus=c;closeModal('modal-perm');renderPermohonan()}
+function tolakPerm(id){const c=document.getElementById('perm-catatan').value;if(!c.trim()){alert('Sila masukkan sebab penolakan.');return;}const idx=DB.permohonan.findIndex(x=>x.id===id);DB.permohonan[idx].status='ditolak';DB.permohonan[idx].catatan_urus=c;closeModal('modal-perm');renderPermohonan()}
+function renderBajet(){document.getElementById('bajet-cards').innerHTML=DB.bajet.sort((a,b)=>b.tahun-a.tahun).map(b=>{const pct=b.peruntukan>0?Math.min(Math.round(b.digunakan/b.peruntukan*100),100):0,bc=pct>=90?'var(--danger)':pct>=70?'var(--warning)':'var(--accent)',baki=b.peruntukan-b.digunakan;return'<div class="bajet-card"><div class="bajet-card-header"><div style="display:flex;align-items:center;gap:10px"><div style="background:#fef3c7;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#d97706"><path stroke-width="2" d="M21 12V7H5a2 2 0 010-4h14v4"/><path stroke-width="2" d="M3 5v14a2 2 0 002 2h16v-5"/><path stroke-width="2" d="M18 12a2 2 0 000 4h4v-4h-4z"/></svg></div><div><p style="font-size:16px;font-weight:700">Tahun '+b.tahun+'</p><p style="font-size:11px;color:var(--gray-500)">'+(b.catatan||'')+'</p></div></div><button class="btn-icon edit" onclick="openBajetModal('+b.tahun+')" title="Edit"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button></div><div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray-500);margin-bottom:4px"><span>Penggunaan Bajet</span><span style="font-weight:700;color:var(--gray-700)">'+pct+'%</span></div><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:'+pct+'%;background:'+bc+'"></div></div></div><div class="bajet-stats"><div class="bajet-stat"><div class="val">'+fmtRM(b.peruntukan)+'</div><div class="lbl">Peruntukan</div></div><div class="bajet-stat"><div class="val" style="color:var(--accent)">'+fmtRM(b.digunakan)+'</div><div class="lbl">Digunakan</div></div><div class="bajet-stat"><div class="val" style="color:'+(baki<0?'var(--danger)':'var(--success)')+'">'+fmtRM(baki)+'</div><div class="lbl">Baki</div></div></div></div>'}).join('')||'<p style="color:var(--gray-400)">Tiada rekod bajet.</p>'}
+function openBajetModal(tahun){const b=tahun?DB.bajet.find(x=>x.tahun===tahun):null;document.getElementById('bajet-modal-title').textContent=b?'Kemaskini Bajet '+tahun:'Tetapkan Bajet Baru';document.getElementById('bajet-edit-tahun').value=tahun||'';document.getElementById('fb-tahun').value=b?b.tahun:TAHUN;document.getElementById('fb-tahun').disabled=!!b;document.getElementById('fb-peruntukan').value=b?b.peruntukan:'';document.getElementById('fb-digunakan').value=b?b.digunakan:0;document.getElementById('fb-catatan').value=b?b.catatan||'':'';openModal('modal-bajet')}
+function saveBajet(){const te=document.getElementById('bajet-edit-tahun').value,tahun=parseInt(document.getElementById('fb-tahun').value),peruntukan=parseFloat(document.getElementById('fb-peruntukan').value)||0,digunakan=parseFloat(document.getElementById('fb-digunakan').value)||0,catatan=document.getElementById('fb-catatan').value;if(!tahun||!peruntukan){alert('Sila isi tahun dan peruntukan.');return;}if(te){const idx=DB.bajet.findIndex(x=>x.tahun==te);DB.bajet[idx]={tahun,peruntukan,digunakan,catatan};}else{if(DB.bajet.find(b=>b.tahun===tahun)){alert('Rekod bajet tahun '+tahun+' sudah wujud.');return;}DB.bajet.push({tahun,peruntukan,digunakan,catatan});}closeModal('modal-bajet');renderBajet()}
+let lapTab='staf';
+function setLapTab(tab,el){lapTab=tab;document.querySelectorAll('.tab-row .tab-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderLaporan()}
+function renderLaporan(){if(lapTab==='staf'){const rows=DB.staf.map(s=>({...s,jam:getJamStaf(s.id),capai:getJamStaf(s.id)>=42}));document.getElementById('laporan-table').innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>No. Staf</th><th>Nama</th><th>Jawatan</th><th>Gred</th><th>Jam Latihan</th><th>Status KPI</th></tr></thead><tbody>'+rows.map(s=>'<tr><td>'+s.no_staf+'</td><td style="font-weight:600">'+s.nama+'</td><td>'+s.jawatan+'</td><td>'+s.gred+'</td><td class="'+(s.capai?'jam-ok':'jam-fail')+'">'+s.jam+' jam</td><td><span class="badge '+(s.capai?'b-capai':'b-belum_capai')+'">'+(s.capai?'&#10003; Capai':'&#10007; Belum Capai')+'</span></td></tr>').join('')+'</tbody></table></div>'}else{document.getElementById('laporan-table').innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Tajuk Program</th><th>Tarikh Mula</th><th>Jam Kredit</th><th>Jenis</th><th>Status</th><th>Penyertaan</th></tr></thead><tbody>'+DB.latihan.map(l=>'<tr><td style="font-weight:600;max-width:220px">'+l.tajuk+'</td><td style="white-space:nowrap">'+fmtTarikh(l.tarikh_mula)+'</td><td>'+l.jam_kredit+' jam</td><td>'+badge(l.jenis)+'</td><td>'+badge(l.status)+'</td><td>'+l.penyertaan.length+' orang</td></tr>').join('')+'</tbody></table></div>'}}
+function downloadCSV(filename,headers,rows){const esc=v=>'"'+String(v||'').replace(/"/g,'""')+'"',csv=[headers.join(','),...rows.map(r=>r.map(esc).join(','))].join('\n'),a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download=filename;a.click()}
+function eksportStaf(){downloadCSV('Laporan_Staf_ULPL_'+TAHUN+'.csv',['No. Staf','Nama','Jawatan','Gred','Jam Latihan','Status KPI'],DB.staf.map(s=>[s.no_staf,s.nama,s.jawatan,s.gred,getJamStaf(s.id),getJamStaf(s.id)>=42?'Capai':'Belum Capai']))}
+function eksportLatihan(){downloadCSV('Laporan_Latihan_ULPL_'+TAHUN+'.csv',['Tajuk','Penganjur','Tarikh Mula','Jam Kredit','Jenis','Status','Penyertaan'],DB.latihan.map(l=>[l.tajuk,l.anjur||'',l.tarikh_mula,l.jam_kredit,l.jenis,l.status,l.penyertaan.length]))}
+</script>
+</body>
+</html>
